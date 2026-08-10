@@ -1,3 +1,0 @@
-aws_region   = "ap-northeast-2"
-environment  = "dev"
-project_name = "bp20"
