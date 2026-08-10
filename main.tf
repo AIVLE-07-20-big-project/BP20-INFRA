@@ -22,3 +22,9 @@ module "ecr" {
 
   name_prefix = local.name_prefix
 }
+
+module "secrets" {
+  source = "./modules/secrets"
+
+  name_prefix = local.name_prefix
+}

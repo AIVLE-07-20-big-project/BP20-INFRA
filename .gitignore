@@ -12,3 +12,6 @@ override.tf.json
 
 *.auto.tfvars
 *.auto.tfvars.json
+
+# Local secret payloads
+.secrets/
