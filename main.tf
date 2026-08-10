@@ -9,3 +9,10 @@ module "network" {
   private_data_subnet_cidrs = var.private_data_subnet_cidrs
   enable_nat_gateway        = var.enable_nat_gateway
 }
+
+module "security" {
+  source = "./modules/security"
+
+  name_prefix = local.name_prefix
+  vpc_id      = module.network.vpc_id
+}
