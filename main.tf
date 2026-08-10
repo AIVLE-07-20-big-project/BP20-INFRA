@@ -28,3 +28,14 @@ module "secrets" {
 
   name_prefix = local.name_prefix
 }
+
+module "data" {
+  source = "./modules/data"
+
+  name_prefix             = local.name_prefix
+  private_data_subnet_ids = module.network.private_data_subnet_ids
+  rds_security_group_id   = module.security.rds_security_group_id
+  redis_security_group_id = module.security.redis_security_group_id
+  database_name           = var.database_name
+  database_username       = var.database_username
+}
