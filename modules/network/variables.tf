@@ -1,19 +1,6 @@
-variable "aws_region" {
-  description = "AWS 리소스를 생성할 리전"
+variable "name_prefix" {
+  description = "리소스 이름에 사용할 접두사"
   type        = string
-  default     = "ap-northeast-2"
-}
-
-variable "environment" {
-  description = "배포 환경"
-  type        = string
-  default     = "prod"
-}
-
-variable "project_name" {
-  description = "프로젝트 이름"
-  type        = string
-  default     = "bp20"
 }
 
 variable "availability_zones" {
