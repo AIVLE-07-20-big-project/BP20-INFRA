@@ -23,3 +23,11 @@ output "private_app_subnet_ids" {
 output "private_data_subnet_ids" {
   value = module.network.private_data_subnet_ids
 }
+
+output "spring_boot_repository_url" {
+  value = module.ecr.spring_boot_repository_url
+}
+
+output "ai_repository_url" {
+  value = module.ecr.ai_repository_url
+}
