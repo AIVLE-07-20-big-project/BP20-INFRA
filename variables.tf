@@ -46,3 +46,15 @@ variable "enable_nat_gateway" {
   type        = bool
   default     = false
 }
+
+variable "database_name" {
+  description = "애플리케이션 데이터베이스 이름"
+  type        = string
+  default     = "bp20"
+}
+
+variable "database_username" {
+  description = "RDS 관리자 사용자명"
+  type        = string
+  default     = "bp20_admin"
+}

@@ -24,4 +24,4 @@ private_data_subnet_cidrs = [
   "10.20.21.0/24"
 ]
 
-enable_nat_gateway = false
+enable_nat_gateway = true
