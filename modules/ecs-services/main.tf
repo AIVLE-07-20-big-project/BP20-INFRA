@@ -60,7 +60,8 @@ locals {
     { name = "CAMPAIGN_LOGS_S3_PREFIX", value = "logs" },
     { name = "HF_AUTO_DOWNLOAD_ASSETS", value = "false" },
     { name = "ABSA_ENABLED", value = "true" },
-    { name = "ROBERTA_MODEL_PATH", value = "/opt/models/roberta-absa" }
+    { name = "ROBERTA_S3_DIRECTORY", value = "roberta_absa" },
+    { name = "ROBERTA_MODEL_PATH", value = "model/roberta_absa" }
   ]
 
   ai_secrets = [
