@@ -230,6 +230,7 @@ resource "aws_ecs_service" "spring" {
   task_definition                    = aws_ecs_task_definition.spring.arn
   desired_count                      = var.desired_count
   launch_type                        = "FARGATE"
+  enable_execute_command             = true
   platform_version                   = "1.4.0"
   health_check_grace_period_seconds  = 300
   deployment_minimum_healthy_percent = 50

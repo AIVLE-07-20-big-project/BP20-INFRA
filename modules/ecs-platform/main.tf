@@ -115,6 +115,25 @@ resource "aws_iam_role_policy" "be_task_application" {
   policy = data.aws_iam_policy_document.task_application.json
 }
 
+data "aws_iam_policy_document" "be_task_execute_command" {
+  statement {
+    actions = [
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"
+    ]
+
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "be_task_execute_command" {
+  name   = "${var.name_prefix}-be-execute-command"
+  role   = data.aws_iam_role.be_task.id
+  policy = data.aws_iam_policy_document.be_task_execute_command.json
+}
+
 resource "aws_cloudwatch_log_group" "spring" {
   name              = "/ecs/${var.name_prefix}/spring-boot"
   retention_in_days = 14
