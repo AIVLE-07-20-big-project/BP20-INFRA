@@ -54,3 +54,12 @@ module "ecs_platform" {
   ai_model_bucket_arn      = "arn:aws:s3:::${var.ai_model_bucket_name}"
   product_image_bucket_arn = "arn:aws:s3:::${var.product_image_bucket_name}"
 }
+
+module "alb" {
+  source = "./modules/alb"
+
+  name_prefix           = local.name_prefix
+  vpc_id                = module.network.vpc_id
+  public_subnet_ids     = module.network.public_subnet_ids
+  alb_security_group_id = module.security.alb_security_group_id
+}
