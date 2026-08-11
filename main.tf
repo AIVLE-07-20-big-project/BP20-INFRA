@@ -39,3 +39,18 @@ module "data" {
   database_name           = var.database_name
   database_username       = var.database_username
 }
+
+module "ecs_platform" {
+  source = "./modules/ecs-platform"
+
+  name_prefix              = local.name_prefix
+  vpc_id                   = module.network.vpc_id
+  backend_secret_arn       = module.secrets.backend_secret_arn
+  ai_secret_arn            = module.secrets.ai_secret_arn
+  rds_master_secret_arn    = module.data.rds_master_secret_arn
+  execution_role_name      = var.ecs_execution_role_name
+  ai_task_role_name        = var.ai_task_role_name
+  be_task_role_name        = var.be_task_role_name
+  ai_model_bucket_arn      = "arn:aws:s3:::${var.ai_model_bucket_name}"
+  product_image_bucket_arn = "arn:aws:s3:::${var.product_image_bucket_name}"
+}
