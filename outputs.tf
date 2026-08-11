@@ -39,3 +39,11 @@ output "rds_endpoint" {
 output "redis_primary_endpoint" {
   value = module.data.redis_primary_endpoint
 }
+
+output "alb_dns_name" {
+  value = module.alb.alb_dns_name
+}
+
+output "ecs_service_names" {
+  value = module.ecs_services.service_names
+}

@@ -25,3 +25,16 @@ private_data_subnet_cidrs = [
 ]
 
 enable_nat_gateway = true
+
+ecs_execution_role_name   = "bp20-ecsTaskExecutionRole"
+ai_task_role_name         = "bp20-aiTaskRole"
+be_task_role_name         = "bp20-beTaskRole"
+ai_model_bucket_name      = "aivlebp20-prod-assets"
+product_image_bucket_name = "aivlebp20-product-images-prod"
+
+# CloudFront와 reCAPTCHA 연결 예정
+application_image_tag     = "bootstrap"
+jpa_ddl_auto              = "update"
+cors_allowed_origins      = ""
+captcha_enabled           = false
+captcha_allowed_hostnames = ""
