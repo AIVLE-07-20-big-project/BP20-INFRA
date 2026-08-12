@@ -32,7 +32,7 @@ be_task_role_name         = "bp20-beTaskRole"
 ai_model_bucket_name      = "aivlebp20-prod-assets"
 product_image_bucket_name = "aivlebp20-product-images-prod"
 
-application_image_tag     = "release-20260812-01"
+application_image_tag     = "release-20260812-02"
 jpa_ddl_auto              = "validate"
 cors_allowed_origins      = "https://dt555m45x3ua9.cloudfront.net"
 captcha_enabled           = true
