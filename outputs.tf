@@ -47,3 +47,15 @@ output "alb_dns_name" {
 output "ecs_service_names" {
   value = module.ecs_services.service_names
 }
+
+output "frontend_bucket_name" {
+  value = module.web.frontend_bucket_name
+}
+
+output "cloudfront_distribution_id" {
+  value = module.web.cloudfront_distribution_id
+}
+
+output "cloudfront_domain_name" {
+  value = module.web.cloudfront_domain_name
+}

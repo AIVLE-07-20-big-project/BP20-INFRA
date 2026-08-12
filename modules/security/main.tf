@@ -65,6 +65,16 @@ resource "aws_vpc_security_group_ingress_rule" "spring_from_alb" {
   ip_protocol                  = "tcp"
 }
 
+# AI 리뷰 분석 Agent가 Spring의 /api/internal/** 을 Cloud Map 주소로 역호출한다.
+resource "aws_vpc_security_group_ingress_rule" "spring_from_ai" {
+  security_group_id            = aws_security_group.spring.id
+  referenced_security_group_id = aws_security_group.ai.id
+  from_port                    = 8080
+  to_port                      = 8080
+  ip_protocol                  = "tcp"
+  description                  = "AI internal API callback"
+}
+
 resource "aws_vpc_security_group_ingress_rule" "fastapi_from_spring" {
   security_group_id            = aws_security_group.ai.id
   referenced_security_group_id = aws_security_group.spring.id

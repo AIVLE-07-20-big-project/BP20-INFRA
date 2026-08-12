@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 module "network" {
   source = "./modules/network"
 
@@ -97,4 +99,13 @@ module "ecs_services" {
   captcha_allowed_hostnames = var.captcha_allowed_hostnames
 
   depends_on = [module.alb]
+}
+
+module "web" {
+  source = "./modules/web"
+
+  name_prefix               = local.name_prefix
+  account_id                = data.aws_caller_identity.current.account_id
+  alb_dns_name              = module.alb.alb_dns_name
+  product_image_bucket_name = var.product_image_bucket_name
 }
