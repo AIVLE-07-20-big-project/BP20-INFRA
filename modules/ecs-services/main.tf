@@ -61,14 +61,19 @@ locals {
     { name = "HF_AUTO_DOWNLOAD_ASSETS", value = "false" },
     { name = "ABSA_ENABLED", value = "true" },
     { name = "ROBERTA_S3_DIRECTORY", value = "roberta_absa" },
-    { name = "ROBERTA_MODEL_PATH", value = "model/roberta_absa" }
+    { name = "ROBERTA_MODEL_PATH", value = "model/roberta_absa" },
+    { name = "SPRINGBOOT_BASE_URL", value = "http://spring.bp20.local:8080" }
   ]
 
   ai_secrets = [
     { name = "AI_DB_USERNAME", valueFrom = "${var.rds_master_secret_arn}:username::" },
     { name = "AI_DB_PASSWORD", valueFrom = "${var.rds_master_secret_arn}:password::" },
     { name = "OPENAI_API_KEY", valueFrom = "${var.ai_secret_arn}:OPENAI_API_KEY::" },
-    { name = "LANGSMITH_API_KEY", valueFrom = "${var.ai_secret_arn}:LANGSMITH_API_KEY::" }
+    { name = "LANGSMITH_API_KEY", valueFrom = "${var.ai_secret_arn}:LANGSMITH_API_KEY::" },
+    { name = "PUBLIC_DATA_STORE_API_KEY", valueFrom = "${var.ai_secret_arn}:PUBLIC_DATA_STORE_API_KEY::" },
+    { name = "SEOUL_API_KEY", valueFrom = "${var.ai_secret_arn}:SEOUL_API_KEY::" },
+    { name = "GOOGLE_PLACES_API_KEY", valueFrom = "${var.ai_secret_arn}:GOOGLE_PLACES_API_KEY::" },
+    { name = "INTERNAL_API_KEY", valueFrom = "${var.backend_secret_arn}:INTERNAL_API_KEY::" }
   ]
 }
 
@@ -208,6 +213,22 @@ resource "aws_ecs_task_definition" "celery_beat" {
   }])
 }
 
+# AI 리뷰 분석 Agent가 spring.bp20.local:8080 으로 Spring 내부 API를 호출한다.
+resource "aws_service_discovery_service" "spring" {
+  name = "spring"
+
+  dns_config {
+    namespace_id = var.namespace_id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+}
+
 resource "aws_service_discovery_service" "fastapi" {
   name = "fastapi"
 
@@ -245,6 +266,10 @@ resource "aws_ecs_service" "spring" {
     target_group_arn = var.spring_target_group_arn
     container_name   = "spring-boot"
     container_port   = 8080
+  }
+
+  service_registries {
+    registry_arn = aws_service_discovery_service.spring.arn
   }
 
   deployment_circuit_breaker {
