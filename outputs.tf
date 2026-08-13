@@ -59,3 +59,11 @@ output "cloudfront_distribution_id" {
 output "cloudfront_domain_name" {
   value = module.web.cloudfront_domain_name
 }
+
+output "github_deploy_role_arns" {
+  value = {
+    frontend = module.github_oidc.frontend_deploy_role_arn
+    backend  = module.github_oidc.backend_deploy_role_arn
+    ai       = module.github_oidc.ai_deploy_role_arn
+  }
+}

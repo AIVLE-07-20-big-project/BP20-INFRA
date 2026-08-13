@@ -62,7 +62,11 @@ locals {
     { name = "ABSA_ENABLED", value = "true" },
     { name = "ROBERTA_S3_DIRECTORY", value = "roberta_absa" },
     { name = "ROBERTA_MODEL_PATH", value = "model/roberta_absa" },
-    { name = "SPRINGBOOT_BASE_URL", value = "http://spring.bp20.local:8080" }
+    # AI가 Spring 내부 API를 역호출할 때 쓰는 주소. 모듈마다 읽는 변수명이 달라 둘 다 넣는다.
+    #   SPRINGBOOT_BASE_URL      → app/agent/review/{nodes,tools}.py (리뷰 분석 Agent)
+    #   BACKEND_INTERNAL_BASE_URL → app/sales_target/router.py (영업 타겟 추천)
+    { name = "SPRINGBOOT_BASE_URL", value = "http://spring.bp20.local:8080" },
+    { name = "BACKEND_INTERNAL_BASE_URL", value = "http://spring.bp20.local:8080" }
   ]
 
   ai_secrets = [
