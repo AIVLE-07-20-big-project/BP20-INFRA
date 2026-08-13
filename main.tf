@@ -109,3 +109,23 @@ module "web" {
   alb_dns_name              = module.alb.alb_dns_name
   product_image_bucket_name = var.product_image_bucket_name
 }
+
+module "github_oidc" {
+  source = "./modules/github-oidc"
+
+  name_prefix                 = local.name_prefix
+  frontend_bucket_arn         = module.web.frontend_bucket_arn
+  cloudfront_distribution_arn = module.web.cloudfront_distribution_arn
+  ecs_cluster_arn             = module.ecs_platform.cluster_id
+
+  ecr_repository_arns = [
+    module.ecr.spring_boot_repository_arn,
+    module.ecr.ai_repository_arn
+  ]
+
+  task_role_arns = [
+    module.ecs_platform.execution_role_arn,
+    module.ecs_platform.be_task_role_arn,
+    module.ecs_platform.ai_task_role_arn
+  ]
+}
