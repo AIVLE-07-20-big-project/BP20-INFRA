@@ -25,10 +25,17 @@ data "aws_iam_policy_document" "assume" {
       values   = ["sts.amazonaws.com"]
     }
 
+    # GitHub 조직에 "불변 식별자(immutable identifier)"가 켜져 있으면 sub 에 조직·저장소의
+    # 숫자 ID가 붙어 repo:ORG@123/REPO@456:environment:prod 형태가 된다. 두 형식을 모두
+    # 허용하려고 StringLike 를 쓴다(와일드카드가 없는 값은 정확히 일치할 때만 통과한다).
+    # 조직명·저장소명·Environment 는 그대로 고정되므로 다른 저장소는 여전히 거부된다.
     condition {
-      test     = "StringEquals"
+      test     = "StringLike"
       variable = "${local.oidc_url}:sub"
-      values   = ["repo:${var.github_org}/${each.key}:environment:prod"]
+      values = [
+        "repo:${var.github_org}/${each.key}:environment:prod",
+        "repo:${var.github_org}@*/${each.key}@*:environment:prod",
+      ]
     }
   }
 }
