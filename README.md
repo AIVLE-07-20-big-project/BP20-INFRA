@@ -1,0 +1,273 @@
+# BP20-INFRA
+
+**Market Poke** 운영 인프라를 Terraform으로 관리하는 저장소입니다.
+
+AWS 위에 VPC부터 ECS Fargate, RDS, CloudFront, CI/CD용 IAM Role까지 전부 코드로 정의합니다. 콘솔에서 손으로 만든 리소스는 없습니다.
+
+---
+
+## Market Poke란
+
+온·오프라인 매장 데이터를 분석해 **AI 기반 운영 전략을 제안하고, 실행 결과까지 검증**하는 B2B 경영 분석 플랫폼입니다.
+
+주요 고객은 개별 점주가 아니라 네이버페이·토스플레이스·카카오페이 같은 **POS·결제 단말기 사업자**입니다. 결제 플랫폼이 '결제 서비스'에서 '매장 운영 플랫폼'으로 확장하는 흐름에 필요한 분석 계층을 제공합니다.
+
+기존 서비스가 데이터를 **보여주는** 데서 멈춘다면, Market Poke는 한 단계 더 갑니다.
+
+```
+분석  →  추천  →  실행  →  검증
+```
+
+| 기능 | 설명 |
+| --- | --- |
+| 매장별 맞춤 전략 | 매출 변화의 내·외부 원인을 진단하고 대응 방안을 추천, 실행 전후 성과를 비교 검증 |
+| 리뷰 분석 | 리뷰를 5개 속성 × 3개 감성으로 분류하고 매장별 키워드를 추출해 월간 개선 우선순위 제시 |
+| O2O 커머스 | 오프라인 상품의 온라인 판매 확장, AI 상품 이미지 생성, 온·오프라인 쿠폰 연계 |
+| 신규 가맹점 영업 타겟 추천 | 상권 성장성·유동인구·리뷰 활성도 등을 가중합해 후보를 스코어링하고 AI Agent가 검수 |
+| 가계부·발주 관리 | 영수증 OCR 기반 가계부 리포트, 날씨·매출 기반 발주 추천 |
+
+---
+
+## 이 저장소가 하는 일
+
+애플리케이션 코드는 별도 저장소에 있고, 여기서는 **그 코드가 돌아갈 환경**을 정의합니다.
+
+- 네트워크 격리 — 데이터 계층을 인터넷에서 완전히 분리
+- 컨테이너 오케스트레이션 — ECS Fargate 4개 서비스
+- 데이터 저장소 — RDS MySQL, ElastiCache Redis
+- 정적 호스팅과 CDN — S3 + CloudFront
+- 비밀 관리 — Secrets Manager, 평문 비밀번호 없음
+- CI/CD 인증 — GitHub Actions OIDC, 장기 Access Key 없음
+
+### 관련 저장소
+
+| 저장소 | 역할 |
+| --- | --- |
+| [BP20-FE](https://github.com/AIVLE-07-20-big-project/BP20-FE) | React 프론트엔드 |
+| [BP20-BE](https://github.com/AIVLE-07-20-big-project/BP20-BE) | Spring Boot API 서버 |
+| [BP20-AI](https://github.com/AIVLE-07-20-big-project/BP20-AI) | FastAPI AI 서버, Celery Worker·Beat |
+| **BP20-INFRA** | **AWS 인프라 (이 저장소)** |
+
+---
+
+## 아키텍처
+<img width="4321" height="2342" alt="Image" src="https://github.com/user-attachments/assets/1e4268bb-ba15-4303-8f7e-6fb19af18ae4" />
+
+
+### 설계 원칙
+
+**외부 노출은 CloudFront와 ALB로만 한정합니다.** RDS·Redis·FastAPI·Celery는 프라이빗 서브넷에 있고 퍼블릭 IP가 없습니다. 아웃바운드가 필요한 경우에만 NAT Gateway를 거칩니다.
+
+**프론트엔드와 API를 같은 Origin으로 제공합니다.** CloudFront가 정적 파일과 `/api/*`를 함께 서빙해 Mixed Content와 CORS 문제를 구조적으로 없앴습니다.
+
+**서비스 간 통신은 Cloud Map을 사용합니다.** Spring → FastAPI, AI → Spring 내부 API 모두 `*.bp20.local` 내부 DNS로 연결됩니다. ALB를 우회하므로 인터넷 경로를 타지 않습니다.
+
+**비밀은 Secrets Manager에만 둡니다.** JWT 서명 키, DB 비밀번호, 외부 API 키는 ECS Task Definition의 `secrets` 필드로 주입되며 이미지나 Git에 남지 않습니다.
+
+---
+
+## 저장소 구조
+
+```
+.
+├── backend.tf              # S3 원격 상태 + 네이티브 잠금
+├── providers.tf            # AWS Provider, 공통 태그
+├── versions.tf             # Terraform · Provider 버전 제약
+├── main.tf                 # 모듈 조립
+├── variables.tf            # 입력 변수 정의
+├── outputs.tf              # 엔드포인트 · ARN 출력
+├── locals.tf               # name_prefix, 공통 태그
+├── environments/
+│   └── prod/
+│       └── terraform.tfvars
+├── modules/
+└── docs/                   # 단계별 구축 가이드
+```
+
+### 모듈
+
+| 모듈 | 관리 리소스 |
+| --- | --- |
+| `network` | VPC, Subnet 6개(public·app·data × 2AZ), IGW, NAT Gateway, Route Table |
+| `security` | Security Group 5종과 인바운드·아웃바운드 규칙 |
+| `ecr` | Spring·AI 이미지 저장소, Lifecycle Policy |
+| `secrets` | Secrets Manager 저장소 (Backend·AI) |
+| `data` | RDS MySQL, ElastiCache Redis, Subnet Group |
+| `ecs-platform` | ECS Cluster, IAM Role 연결, CloudWatch Log Group, Cloud Map Namespace |
+| `ecs-services` | Task Definition 4개, ECS Service 4개, Service Discovery |
+| `alb` | Application Load Balancer, Target Group, Listener |
+| `web` | Frontend S3, CloudFront Distribution, OAC, SPA Rewrite Function |
+| `github-oidc` | OIDC Provider, 저장소별 배포 Role 3종 |
+
+### 주요 스펙
+
+| 항목 | 값 |
+| --- | --- |
+| 리전 | `ap-northeast-2` (서울) |
+| VPC CIDR | `10.20.0.0/16`, 가용 영역 2개 |
+| ECS | Fargate, `awsvpc`, Platform 1.4.0 |
+| RDS | MySQL `db.t4g.micro`, gp3 20GB, Single-AZ |
+| Redis | `cache.t4g.micro`, 노드 1개 |
+| Terraform | `>= 1.10.0, < 2.0.0` |
+| AWS Provider | `>= 5.0, < 7.0` |
+
+RDS는 비용을 고려한 Single-AZ 구성입니다. 상용 환경이라면 Multi-AZ를 권장합니다.
+
+---
+
+## 시작하기
+
+### 사전 준비
+
+- Terraform 1.10 이상
+- AWS CLI v2, IAM Identity Center(SSO) 프로필 설정
+- 상태 저장용 S3 버킷 (`backend.tf` 참고)
+
+### 1. 자격 증명
+
+```bash
+aws sso login --profile bp20
+```
+
+```bash
+export AWS_PROFILE=bp20 AWS_REGION=ap-northeast-2 AWS_DEFAULT_REGION=ap-northeast-2 AWS_SDK_LOAD_CONFIG=1
+```
+
+계정이 맞는지 확인합니다.
+
+```bash
+aws sts get-caller-identity
+```
+
+### 2. 초기화
+
+```bash
+terraform init
+```
+
+### 3. 검증
+
+코드를 변경한 뒤에는 항상 이 순서로 확인합니다.
+
+```bash
+terraform fmt -recursive
+```
+
+```bash
+terraform validate
+```
+
+### 4. 계획과 적용
+
+```bash
+terraform plan -var-file=environments/prod/terraform.tfvars -out=prod.tfplan
+```
+
+```bash
+terraform show prod.tfplan
+```
+
+계획을 직접 확인한 뒤에만 적용합니다.
+
+```bash
+terraform apply prod.tfplan
+```
+
+---
+
+## 애플리케이션 배포
+
+Terraform은 **인프라만** 관리합니다. 컨테이너 이미지 빌드와 배포는 각 저장소의 GitHub Actions가 담당합니다.
+
+| 변경 대상 | 방법 |
+| --- | --- |
+| 애플리케이션 코드 | 각 저장소 Actions → `Run workflow` |
+| 인프라 (환경 변수·리소스) | 이 저장소에서 `terraform apply` |
+
+### GitHub Actions OIDC
+
+배포 워크플로는 장기 Access Key 대신 OIDC로 짧은 수명의 자격 증명을 발급받습니다. Trust Policy가 저장소와 Environment를 고정합니다.
+
+```
+repo:AIVLE-07-20-big-project/BP20-BE:environment:prod
+```
+
+Role ARN은 apply 후 출력에서 확인해 각 저장소의 `prod` Environment 변수에 등록합니다.
+
+```bash
+terraform output github_deploy_role_arns
+```
+
+> **Deployment branches 제한이 필요합니다.** Trust Policy의 `sub` 조건은 Environment만 구분하고 브랜치는 구분하지 않습니다. 각 저장소 `prod` Environment에서 배포 가능 브랜치를 `main`으로 제한해야 실질적인 방어가 됩니다.
+
+### Task Definition 갱신 정책
+
+ECS Service에는 다음 설정이 있습니다.
+
+```hcl
+lifecycle {
+  ignore_changes = [task_definition, desired_count]
+}
+```
+
+CI/CD가 배포한 이미지 리비전을 Terraform이 되돌리지 않습니다. 같은 이유로 `terraform apply`만으로는 새 Task Definition이 서비스에 반영되지 않으며, 인프라 변경 후에는 강제 배포가 필요합니다.
+
+```bash
+aws ecs update-service --cluster bp20-prod-cluster --service bp20-prod-spring --task-definition bp20-prod-spring --force-new-deployment --region ap-northeast-2
+```
+
+---
+
+## 운영
+
+### 비용 절감
+
+`desired_count`가 `ignore_changes` 대상이므로 CLI로 조정해도 Terraform이 되돌리지 않습니다. 사용하지 않는 시간대에 Fargate 태스크를 0으로 내리면 비용의 대부분을 절약할 수 있습니다.
+
+```bash
+aws ecs update-service --cluster bp20-prod-cluster --service bp20-prod-spring --desired-count 0 --region ap-northeast-2
+```
+
+자세한 절차는 [ECS 서비스 내리고 올리기](docs/ECS서비스내리고올리기.md)를 참고하세요.
+
+> NAT Gateway·ALB·ElastiCache는 태스크를 내려도 계속 과금됩니다. FastAPI는 모델 로딩 때문에 재기동에 5~10분이 걸립니다.
+
+### 데이터베이스 접근
+
+RDS는 프라이빗 서브넷에 있고 `publicly_accessible = false`이므로 로컬에서 직접 접속할 수 없습니다. VPC 내부에서 일회성 ECS 태스크로 SQL을 실행합니다. 절차는 [리뷰 등록 방법](docs/리뷰등록방법.md)에 정리되어 있습니다.
+
+### 로그
+
+```bash
+aws logs tail /ecs/bp20-prod/spring-boot --since 10m --follow --region ap-northeast-2
+```
+
+로그 그룹은 서비스별로 분리되어 있습니다.
+
+```
+/ecs/bp20-prod/spring-boot
+/ecs/bp20-prod/fastapi
+/ecs/bp20-prod/celery-worker
+/ecs/bp20-prod/celery-beat
+```
+
+> Git Bash(MINGW64)에서는 `/ecs/...` 경로가 Windows 경로로 자동 변환됩니다. 앞에 `MSYS_NO_PATHCONV=1`을 붙이세요.
+
+---
+
+## 주의 사항
+
+- `terraform.tfstate`, `*.tfplan`, 비밀번호, Access Key는 저장소에 올리지 않습니다. `.gitignore`로 차단되어 있습니다.
+- `.terraform.lock.hcl`은 Provider 버전을 고정하므로 **커밋합니다.**
+- 하나의 `prod` State를 팀이 공유하므로 `terraform apply`를 동시에 실행하지 않습니다.
+- State Lock 오류가 나도 다른 작업이 실행 중인지 확인하기 전에는 `force-unlock`을 쓰지 않습니다.
+- AWS 콘솔에서 Terraform 관리 리소스를 직접 수정하면 다음 `apply`에서 되돌아갑니다. 변경은 코드로 반영하세요.
+- `terraform destroy`는 팀 승인 없이 실행하지 않습니다.
+
+---
+
+## 팀
+
+**AI 충남충북 20조** — 박형우(팀장), 박선호, 박승훈, 박유경, 박희상, 이상준
+
+인프라 구성 및 CI/CD 파이프라인: 박유경
