@@ -1,36 +1,47 @@
 # BP20-INFRA
 
-**Market Poke** 운영 인프라를 Terraform으로 관리하는 저장소입니다.
+매장 분석 및 온오프라인 운영 관리 AI 플랫폼 프론트엔드입니다. 점주는 매출·재고·리뷰 현황과 AI 기반 운영 전략을 확인할 수 있으며, 관리자는 입점 매장과 서비스 운영 현황을 관리할 수 있습니다.
 
-AWS 위에 VPC부터 ECS Fargate, RDS, CloudFront, CI/CD용 IAM Role까지 전부 코드로 정의합니다. 콘솔에서 손으로 만든 리소스는 없습니다.
-
----
-
-## Market Poke란
-
-온·오프라인 매장 데이터를 분석해 **AI 기반 운영 전략을 제안하고, 실행 결과까지 검증**하는 B2B 경영 분석 플랫폼입니다.
-
-주요 고객은 개별 점주가 아니라 네이버페이·토스플레이스·카카오페이 같은 **POS·결제 단말기 사업자**입니다. 결제 플랫폼이 '결제 서비스'에서 '매장 운영 플랫폼'으로 확장하는 흐름에 필요한 분석 계층을 제공합니다.
-
-기존 서비스가 데이터를 **보여주는** 데서 멈춘다면, Market Poke는 한 단계 더 갑니다.
+## 실행 경로
 
 ```
-분석  →  추천  →  실행  →  검증
+배포주소 : https://dt555m45x3ua9.cloudfront.net
 ```
 
-| 기능 | 설명 |
-| --- | --- |
-| 매장별 맞춤 전략 | 매출 변화의 내·외부 원인을 진단하고 대응 방안을 추천, 실행 전후 성과를 비교 검증 |
-| 리뷰 분석 | 리뷰를 5개 속성 × 3개 감성으로 분류하고 매장별 키워드를 추출해 월간 개선 우선순위 제시 |
-| O2O 커머스 | 오프라인 상품의 온라인 판매 확장, AI 상품 이미지 생성, 온·오프라인 쿠폰 연계 |
-| 신규 가맹점 영업 타겟 추천 | 상권 성장성·유동인구·리뷰 활성도 등을 가중합해 후보를 스코어링하고 AI Agent가 검수 |
-| 가계부·발주 관리 | 영수증 OCR 기반 가계부 리포트, 날씨·매출 기반 발주 추천 |
+## 전체 기능
+
+### 점주
+
+- 매장 운영 대시보드
+- 매출 및 비용 분석
+- 장부 및 재고 관리
+- AI 운영 전략 추천
+- 전략 적용 효과 검증
+- 리뷰 통계 및 AI 분석
+- 고객 및 리포트 조회
+- 커머스 및 상품 이미지 관리
+- 계정 정보 관리
+
+### 관리자
+
+- 전체 매장 포트폴리오 조회
+- 매장별 상세 현황 확인
+- 위험 매장 모니터링
+- 매출 목표 관리
+- 공지사항 관리
+- 서비스 상태 확인
+- 점주·관리자 계정 및 초대 관리
+- IAM 감사 로그 조회
+
+일부 관리자 기능은 `SUPER_ADMIN` 권한에서만 사용할 수 있습니다.
 
 ---
 
 ## 이 저장소가 하는 일
 
-애플리케이션 코드는 별도 저장소에 있고, 여기서는 **그 코드가 돌아갈 환경**을 정의합니다.
+**Market Poke** 운영 인프라를 Terraform으로 관리하는 저장소입니다.
+
+AWS 위에 VPC부터 ECS Fargate, RDS, CloudFront, CI/CD용 IAM Role까지 전부 코드로 정의합니다.
 
 - 네트워크 격리 — 데이터 계층을 인터넷에서 완전히 분리
 - 컨테이너 오케스트레이션 — ECS Fargate 4개 서비스
@@ -46,7 +57,6 @@ AWS 위에 VPC부터 ECS Fargate, RDS, CloudFront, CI/CD용 IAM Role까지 전�
 | [BP20-FE](https://github.com/AIVLE-07-20-big-project/BP20-FE) | React 프론트엔드 |
 | [BP20-BE](https://github.com/AIVLE-07-20-big-project/BP20-BE) | Spring Boot API 서버 |
 | [BP20-AI](https://github.com/AIVLE-07-20-big-project/BP20-AI) | FastAPI AI 서버, Celery Worker·Beat |
-| **BP20-INFRA** | **AWS 인프라 (이 저장소)** |
 
 ---
 
@@ -113,9 +123,8 @@ AWS 위에 VPC부터 ECS Fargate, RDS, CloudFront, CI/CD용 IAM Role까지 전�
 
 RDS는 비용을 고려한 Single-AZ 구성입니다. 상용 환경이라면 Multi-AZ를 권장합니다.
 
----
 
-## 시작하기
+## 실행 방법
 
 ### 사전 준비
 
@@ -177,7 +186,8 @@ terraform apply prod.tfplan
 
 ## 애플리케이션 배포
 
-Terraform은 **인프라만** 관리합니다. 컨테이너 이미지 빌드와 배포는 각 저장소의 GitHub Actions가 담당합니다.
+Terraform은 인프라만 관리합니다.
+컨테이너 이미지 빌드와 배포는 각 저장소의 GitHub Actions가 담당합니다.
 
 | 변경 대상 | 방법 |
 | --- | --- |
@@ -216,8 +226,6 @@ CI/CD가 배포한 이미지 리비전을 Terraform이 되돌리지 않습니다
 aws ecs update-service --cluster bp20-prod-cluster --service bp20-prod-spring --task-definition bp20-prod-spring --force-new-deployment --region ap-northeast-2
 ```
 
----
-
 ## 운영
 
 ### 비용 절감
@@ -228,13 +236,7 @@ aws ecs update-service --cluster bp20-prod-cluster --service bp20-prod-spring --
 aws ecs update-service --cluster bp20-prod-cluster --service bp20-prod-spring --desired-count 0 --region ap-northeast-2
 ```
 
-자세한 절차는 [ECS 서비스 내리고 올리기](docs/ECS서비스내리고올리기.md)를 참고하세요.
-
 > NAT Gateway·ALB·ElastiCache는 태스크를 내려도 계속 과금됩니다. FastAPI는 모델 로딩 때문에 재기동에 5~10분이 걸립니다.
-
-### 데이터베이스 접근
-
-RDS는 프라이빗 서브넷에 있고 `publicly_accessible = false`이므로 로컬에서 직접 접속할 수 없습니다. VPC 내부에서 일회성 ECS 태스크로 SQL을 실행합니다. 절차는 [리뷰 등록 방법](docs/리뷰등록방법.md)에 정리되어 있습니다.
 
 ### 로그
 
@@ -251,23 +253,8 @@ aws logs tail /ecs/bp20-prod/spring-boot --since 10m --follow --region ap-northe
 /ecs/bp20-prod/celery-beat
 ```
 
-> Git Bash(MINGW64)에서는 `/ecs/...` 경로가 Windows 경로로 자동 변환됩니다. 앞에 `MSYS_NO_PATHCONV=1`을 붙이세요.
-
----
-
-## 주의 사항
-
-- `terraform.tfstate`, `*.tfplan`, 비밀번호, Access Key는 저장소에 올리지 않습니다. `.gitignore`로 차단되어 있습니다.
-- `.terraform.lock.hcl`은 Provider 버전을 고정하므로 **커밋합니다.**
-- 하나의 `prod` State를 팀이 공유하므로 `terraform apply`를 동시에 실행하지 않습니다.
-- State Lock 오류가 나도 다른 작업이 실행 중인지 확인하기 전에는 `force-unlock`을 쓰지 않습니다.
-- AWS 콘솔에서 Terraform 관리 리소스를 직접 수정하면 다음 `apply`에서 되돌아갑니다. 변경은 코드로 반영하세요.
-- `terraform destroy`는 팀 승인 없이 실행하지 않습니다.
-
----
-
 ## 팀
 
-**AI 충남충북 20조** — 박형우(팀장), 박선호, 박승훈, 박유경, 박희상, 이상준
+**AIVLE School AI 충남충북 20조** — 박형우(팀장), 박선호, 박승훈, 박유경, 박희상, 이상준
 
 인프라 구성 및 CI/CD 파이프라인: 박유경
